@@ -1,4 +1,4 @@
-module github.com/gin-gonic/gin
+module github.com/cldfn/gina
 
 go 1.21.0
 
