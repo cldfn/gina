@@ -103,8 +103,7 @@ func (c *Context[T]) reset() {
 	c.handlers = nil
 	c.index = -1
 
-	var cleanData T
-	c.MyData = cleanData
+	c.MyData = c.engine.CleanData
 
 	c.fullPath = ""
 	c.Keys = nil

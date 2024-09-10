@@ -178,6 +178,10 @@ type Engine[T any] struct {
 	maxSections      uint16
 	trustedProxies   []string
 	trustedCIDRs     []*net.IPNet
+
+	// improvements
+	contextDataInitializer func(*T)
+	CleanData              T
 }
 
 var _ IRouter[any] = (*Engine[any])(nil)
@@ -239,10 +243,27 @@ func (engine *Engine[T]) Handler() http.Handler {
 	return h2c.NewHandler(engine, h2s)
 }
 
+func (engine *Engine[T]) SetContextDataIntializer(init func(*T)) *Engine[T] {
+
+	engine.contextDataInitializer = init
+
+	// initalize once
+	init(&engine.CleanData)
+
+	return engine
+}
+
 func (engine *Engine[T]) allocateContext(maxParams uint16) *Context[T] {
 	v := make(Params, 0, maxParams)
 	skippedNodes := make([]skippedNode[T], 0, engine.maxSections)
-	return &Context[T]{engine: engine, params: &v, skippedNodes: &skippedNodes}
+
+	var mData T
+
+	if engine.contextDataInitializer != nil {
+		engine.contextDataInitializer(&mData)
+	}
+
+	return &Context[T]{engine: engine, params: &v, skippedNodes: &skippedNodes, MyData: mData}
 }
 
 // Delims sets template left and right delims and returns an Engine instance.
