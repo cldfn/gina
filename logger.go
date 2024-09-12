@@ -177,23 +177,23 @@ func ErrorLogger[T any]() HandlerFunc[T] {
 
 // ErrorLoggerT returns a HandlerFunc for a given error type.
 func ErrorLoggerT[T any](typ ErrorType) HandlerFunc[T] {
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		c.Next()
 		errors := c.Errors.ByType(typ)
 		if len(errors) > 0 {
 			c.JSON(-1, errors)
 		}
-	}
+	})
 }
 
 // Logger instances a Logger middleware that will write the logs to gin.DefaultWriter.
 // By default, gin.DefaultWriter = os.Stdout.
-func Logger[T any]() HandlerFunc[T] {
+func Logger[T any]() OldHandlerFunc[T] {
 	return LoggerWithConfig(LoggerConfig[T]{})
 }
 
 // LoggerWithFormatter instance a Logger middleware with the specified log format function.
-func LoggerWithFormatter[T any](f LogFormatter) HandlerFunc[T] {
+func LoggerWithFormatter[T any](f LogFormatter) OldHandlerFunc[T] {
 	return LoggerWithConfig(LoggerConfig[T]{
 		Formatter: f,
 	})
@@ -201,7 +201,7 @@ func LoggerWithFormatter[T any](f LogFormatter) HandlerFunc[T] {
 
 // LoggerWithWriter instance a Logger middleware with the specified writer buffer.
 // Example: os.Stdout, a file opened in write mode, a socket...
-func LoggerWithWriter[T any](out io.Writer, notlogged ...string) HandlerFunc[T] {
+func LoggerWithWriter[T any](out io.Writer, notlogged ...string) OldHandlerFunc[T] {
 	return LoggerWithConfig(LoggerConfig[T]{
 		Output:    out,
 		SkipPaths: notlogged,
@@ -209,7 +209,7 @@ func LoggerWithWriter[T any](out io.Writer, notlogged ...string) HandlerFunc[T] 
 }
 
 // LoggerWithConfig instance a Logger middleware with config.
-func LoggerWithConfig[T any](conf LoggerConfig[T]) HandlerFunc[T] {
+func LoggerWithConfig[T any](conf LoggerConfig[T]) OldHandlerFunc[T] {
 	formatter := conf.Formatter
 	if formatter == nil {
 		formatter = defaultLogFormatter

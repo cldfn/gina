@@ -51,7 +51,7 @@ func BasicAuthForRealm[T any](accounts Accounts, realm string) HandlerFunc[T] {
 	}
 	realm = "Basic realm=" + strconv.Quote(realm)
 	pairs := processAccounts[T](accounts)
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		// Search user in the slice of allowed credentials
 		user, found := pairs.searchCredential(c.requestHeader("Authorization"))
 		if !found {
@@ -64,7 +64,7 @@ func BasicAuthForRealm[T any](accounts Accounts, realm string) HandlerFunc[T] {
 		// The user credentials was found, set user's id to key AuthUserKey in this context, the user's id can be read later using
 		// c.MustGet(gin.AuthUserKey).
 		c.Set(AuthUserKey, user)
-	}
+	})
 }
 
 // BasicAuth returns a Basic HTTP Authorization middleware. It takes as argument a map[string]string where
@@ -101,7 +101,7 @@ func BasicAuthForProxy[T any](accounts Accounts, realm string) HandlerFunc[T] {
 	}
 	realm = "Basic realm=" + strconv.Quote(realm)
 	pairs := processAccounts[T](accounts)
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		proxyUser, found := pairs.searchCredential(c.requestHeader("Proxy-Authorization"))
 		if !found {
 			// Credentials doesn't match, we return 407 and abort handlers chain.
@@ -112,5 +112,5 @@ func BasicAuthForProxy[T any](accounts Accounts, realm string) HandlerFunc[T] {
 		// The proxy_user credentials was found, set proxy_user's id to key AuthProxyUserKey in this context, the proxy_user's id can be read later using
 		// c.MustGet(gin.AuthProxyUserKey).
 		c.Set(AuthProxyUserKey, proxyUser)
-	}
+	})
 }

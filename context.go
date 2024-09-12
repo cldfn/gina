@@ -194,7 +194,19 @@ func (c *Context[T]) Next() {
 		if c.handlers[c.index] == nil {
 			continue
 		}
-		c.handlers[c.index](c)
+
+		hinfo := c.handlers[c.index]
+
+		if hinfo.AccessCheck != nil {
+			hasAccess := hinfo.AccessCheck(&c.MyData)
+			if !hasAccess {
+				c.AbortWithStatus(403)
+				continue
+			}
+		}
+
+		hinfo.Handler(c)
+
 		c.index++
 	}
 }

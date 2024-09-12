@@ -28,26 +28,26 @@ func Bind[T any](val any) HandlerFunc[T] {
 	}
 	typ := value.Type()
 
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		obj := reflect.New(typ).Interface()
 		if c.Bind(obj) == nil {
 			c.Set(BindKey, obj)
 		}
-	}
+	})
 }
 
 // WrapF is a helper function for wrapping http.HandlerFunc and returns a Gin middleware.
 func WrapF[T any](f http.HandlerFunc) HandlerFunc[T] {
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		f(c.Writer, c.Request)
-	}
+	})
 }
 
 // WrapH is a helper function for wrapping http.Handler and returns a Gin middleware.
 func WrapH[T any](h http.Handler) HandlerFunc[T] {
-	return func(c *Context[T]) {
+	return WrapHandler(func(c *Context[T]) {
 		h.ServeHTTP(c.Writer, c.Request)
-	}
+	})
 }
 
 // H is a shortcut for map[string]any

@@ -49,14 +49,30 @@ var defaultTrustedCIDRs = []*net.IPNet{
 var regSafePrefix = regexp.MustCompile("[^a-zA-Z0-9/-]+")
 var regRemoveRepeatedChar = regexp.MustCompile("/{2,}")
 
+func WrapHandler[T any](h func(*Context[T])) *HandlerInfo[T] {
+	return &HandlerInfo[T]{
+		Handler: h,
+	}
+}
+
+type OldHandlerFunc[T any] func(*Context[T])
+
+type AccessChecker[T any] func(ctx *T) bool
+
+type HandlerInfo[T any] struct {
+	Handler     OldHandlerFunc[T]
+	AccessCheck AccessChecker[T]
+}
+
 // HandlerFunc defines the handler used by gin middleware as return value.
-type HandlerFunc[T any] func(*Context[T])
+type HandlerFunc[T any] *HandlerInfo[T]
 
 // OptionFunc defines the function to change the default configuration
 type OptionFunc[T any] func(*Engine[T])
 
 // HandlersChain defines a HandlerFunc slice.
 type HandlersChain[T any] []HandlerFunc[T]
+type OldHandlersChain[T any] []OldHandlerFunc[T]
 
 // Last returns the last handler in the chain. i.e. the last handler is the main one.
 func (c HandlersChain[T]) Last() HandlerFunc[T] {
@@ -321,24 +337,33 @@ func (engine *Engine[T]) SetFuncMap(funcMap template.FuncMap) {
 }
 
 // NoRoute adds handlers for NoRoute. It returns a 404 code by default.
-func (engine *Engine[T]) NoRoute(handlers ...HandlerFunc[T]) {
-	engine.noRoute = handlers
+func (engine *Engine[T]) NoRoute(handlers ...OldHandlerFunc[T]) {
+	engine.noRoute = wrapOldHandlers(handlers)
 	engine.rebuild404Handlers()
 }
 
 // NoMethod sets the handlers called when Engine.HandleMethodNotAllowed = true.
-func (engine *Engine[T]) NoMethod(handlers ...HandlerFunc[T]) {
-	engine.noMethod = handlers
+func (engine *Engine[T]) NoMethod(handlers ...OldHandlerFunc[T]) {
+	engine.noMethod = wrapOldHandlers(handlers)
 	engine.rebuild405Handlers()
 }
 
 // Use attaches a global middleware to the router. i.e. the middleware attached through Use() will be
 // included in the handlers chain for every single request. Even 404, 405, static files...
 // For example, this is the right place for a logger or error management middleware.
-func (engine *Engine[T]) Use(middleware ...HandlerFunc[T]) IRoutes[T] {
+func (engine *Engine[T]) Use(middleware ...OldHandlerFunc[T]) IRoutes[T] {
 	engine.RouterGroup.Use(middleware...)
 	engine.rebuild404Handlers()
 	engine.rebuild405Handlers()
+
+	return engine
+}
+
+func (engine *Engine[T]) UseWithAccess(middleware ...HandlerFunc[T]) IRoutes[T] {
+	engine.RouterGroup.UseWithAccess(middleware...)
+	engine.rebuild404Handlers()
+	engine.rebuild405Handlers()
+
 	return engine
 }
 

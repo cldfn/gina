@@ -30,17 +30,17 @@ var (
 type RecoveryFunc[T any] func(c *Context[T], err any)
 
 // Recovery returns a middleware that recovers from any panics and writes a 500 if there was one.
-func Recovery[T any]() HandlerFunc[T] {
+func Recovery[T any]() OldHandlerFunc[T] {
 	return RecoveryWithWriter[T](DefaultErrorWriter)
 }
 
 // CustomRecovery returns a middleware that recovers from any panics and calls the provided handle func to handle it.
-func CustomRecovery[T any](handle RecoveryFunc[T]) HandlerFunc[T] {
+func CustomRecovery[T any](handle RecoveryFunc[T]) OldHandlerFunc[T] {
 	return RecoveryWithWriter[T](DefaultErrorWriter, handle)
 }
 
 // RecoveryWithWriter returns a middleware for a given writer that recovers from any panics and writes a 500 if there was one.
-func RecoveryWithWriter[T any](out io.Writer, recovery ...RecoveryFunc[T]) HandlerFunc[T] {
+func RecoveryWithWriter[T any](out io.Writer, recovery ...RecoveryFunc[T]) OldHandlerFunc[T] {
 	if len(recovery) > 0 {
 		return CustomRecoveryWithWriter[T](out, recovery[0])
 	}
@@ -48,7 +48,7 @@ func RecoveryWithWriter[T any](out io.Writer, recovery ...RecoveryFunc[T]) Handl
 }
 
 // CustomRecoveryWithWriter returns a middleware for a given writer that recovers from any panics and calls the provided handle func to handle it.
-func CustomRecoveryWithWriter[T any](out io.Writer, handle RecoveryFunc[T]) HandlerFunc[T] {
+func CustomRecoveryWithWriter[T any](out io.Writer, handle RecoveryFunc[T]) OldHandlerFunc[T] {
 	var logger *log.Logger
 	if out != nil {
 		logger = log.New(out, "\n\n\x1b[31m", log.LstdFlags)
